@@ -3,26 +3,40 @@ import { useNavigate } from "react-router-dom";
 export default function ProductNew() {
   const navigate = useNavigate();
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(e) {
+  e.preventDefault();
 
-    const formData = new FormData(e.currentTarget);
+  const formData = new FormData(e.currentTarget);
 
-    const newProduct = {
-      title: formData.get("title"),
-      price: Number(formData.get("price")),
-      categoryId: Number(formData.get("categoryId")),
-      image: formData.get("image"),
-      description: formData.get("description"),
-    };
+  const newProduct = {
+    title: formData.get("title"),
+    price: Number(formData.get("price")),
+    categoryId: Number(formData.get("categoryId")),
+    images: [formData.get("image")], 
+    description: formData.get("description"),
+  };
 
-    console.log("New product:", newProduct);
+  try {
+    const res = await fetch("https://api.escuelajs.co/api/v1/products", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newProduct),
+    });
 
-    // Later: POST to API
-    alert("Product submitted (mock)");
-
-    navigate("/products");
+    if (res.ok) {
+      alert("Successfully saved a new product");
+      navigate("/products");
+    } else {
+      alert("Saved a new product is failed");
+    }
+  } catch (error) {
+    console.error("Error submitting product:", error);
+    alert("Saved a new product is failed");
   }
+}
+
 
   return (
     <div className="max-w-xl space-y-6">

@@ -1,8 +1,32 @@
 import { Link } from "react-router-dom";
-import products from "../assets/data/products.json";
+import { useEffect, useState } from "react";
 
 export default function Products() {
-  const items = products;
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => { 
+    fetch("https://api.escuelajs.co/api/v1/products?limit=12&offset=1")
+      .then(async (res) => {
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || "Failed to fetch products");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setItems(data);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError(err.message);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <p>Loading products...</p>;
+  if (error) return <p className="text-red-500">Error: {error}</p>;
 
   return (
     <div className="space-y-4">
@@ -20,7 +44,7 @@ export default function Products() {
         </Link>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2">
         {items.map((p) => (
           <Link
             key={p.id}

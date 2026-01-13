@@ -1,23 +1,48 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import products from "../assets/data/products.json";
 
 export default function Home() {
-  const items = products;
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Featured: first 4 items (simple + predictable for practice)
-  const featured = items.slice(0, 4);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch categories
+        const catRes = await fetch(
+          "https://api.escuelajs.co/api/v1/categories?limit=4"
+        );
+        const catData = await catRes.json();
+        setCategories(catData);
 
-  // Categories: unique by category.id
-  const categories = Array.from(
-    new Map(items.map((p) => [p.category.id, p.category])).values()
-  );
+        // Fetch products
+        const prodRes = await fetch(
+          "https://api.escuelajs.co/api/v1/products?limit=12&offset=1"
+        );
+        const prodData = await prodRes.json();
+        setProducts(prodData);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to fetch data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+
+  // Featured: first 4 products
+  const featured = products.slice(0, 4);
 
   // Latest: sort by creationAt desc, take 4
-  const latest = [...items]
-    .sort(
-      (a, b) =>
-        new Date(b.creationAt).getTime() - new Date(a.creationAt).getTime()
-    )
+  const latest = [...products]
+    .sort((a, b) => new Date(b.creationAt) - new Date(a.creationAt))
     .slice(0, 4);
 
   return (
@@ -50,53 +75,48 @@ export default function Home() {
 
         {/* Featured Products */}
         <section className="space-y-3">
-          <div className="flex items-end justify-between">
-            <h2 className="text-lg font-semibold">Featured products</h2>
-            <Link to="/products" className="text-sm text-slate-700 underline">
-              View all
-            </Link>
-          </div>
+  <div className="flex items-end justify-between">
+    <h2 className="text-lg font-semibold">Featured products</h2>
+    <Link to="/products" className="text-sm text-slate-700 underline">
+      View all
+    </Link>
+  </div>
 
-          <div className="space-y-3 gap-4">
-            {featured.map((p) => (
-              <Link
-                key={p.id}
-                to={`/products/${p.id}`}
-                className="block rounded-2xl border bg-white p-4 hover:shadow-sm transition"
-              >
-                <div className="flex gap-3">
-                  <img
-                    src={p.images?.[0] ?? "https://placehold.co/600x400"}
-                    alt={p.title}
-                    className="h-20 w-20 shrink-0 rounded-xl object-cover"
-                    loading="lazy"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate font-medium">{p.title}</div>
-                        <div className="truncate text-xs text-slate-600">
-                          {p.category?.name}
-                        </div>
-                      </div>
-                      <div className="shrink-0 font-semibold">${p.price}</div>
-                    </div>
+  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+    {featured.map((p) => (
+      <Link
+        key={p.id}
+        to={`/products/${p.id}`}
+        className="flex flex-col rounded-2xl border bg-white p-4 hover:shadow-sm transition"
+      >
+        {/* Image */}
+        <img
+          src={p.images?.[0] ?? "https://placehold.co/600x400"}
+          alt={p.title}
+          className="h-40 w-full rounded-xl object-cover mb-3"
+          loading="lazy"
+        />
 
-                    <p className="mt-2 line-clamp-2 text-sm text-slate-600">
-                      {p.description}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))}
+        {/* Text content */}
+        <div className="flex flex-col gap-1">
+          <div className="font-medium">{p.title}</div>
+          <div className="text-xs text-slate-600">{p.category?.name}</div>
+          <div className="text-sm text-slate-600 line-clamp-2">
+            {p.description}
           </div>
-        </section>
+          <div className="mt-2 font-semibold">${p.price}</div>
+        </div>
+      </Link>
+    ))}
+  </div>
+</section>
+
 
         {/* Categories */}
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Categories</h2>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-4">
             {categories.map((c) => (
               <Link
                 key={c.id}
